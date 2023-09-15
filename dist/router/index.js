@@ -1,0 +1,21 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.router = void 0;
+const express_1 = require("express");
+const UserController_1 = require("../controllers/UserController");
+const express_validator_1 = require("express-validator");
+const UserMiddleware_1 = require("../middlewares/UserMiddleware");
+const CryptoController_1 = require("../controllers/CryptoController");
+const CryptoMiddleware_1 = require("../middlewares/CryptoMiddleware");
+const router = (0, express_1.Router)();
+exports.router = router;
+router.post("/registration", (0, express_validator_1.body)("email"), (0, express_validator_1.body)("password").isLength({ min: 8 }), (0, express_validator_1.body)("name"), (0, express_validator_1.body)("lastName"), CryptoMiddleware_1.cryptoMiddleware, UserController_1.userController.registration);
+router.post("/login", (0, express_validator_1.body)("email").isEmail(), (0, express_validator_1.body)("password").isLength({ min: 8 }), CryptoMiddleware_1.cryptoMiddleware, UserController_1.userController.login);
+router.get("/publicKey", CryptoController_1.cryptoController.generateKeyPair);
+router.post("/secretKey", (0, express_validator_1.body)("sessionId"), (0, express_validator_1.body)("secretKey"), CryptoController_1.cryptoController.getSecretKey);
+router.post("/verify-code", (0, express_validator_1.body)("code").isLength({ min: 4, max: 4 }), CryptoMiddleware_1.cryptoMiddleware, UserController_1.userController.verifyCode);
+router.post("/update", (0, express_validator_1.body)("user"), CryptoMiddleware_1.cryptoMiddleware, UserMiddleware_1.userMiddleware, UserController_1.userController.update);
+router.get("/user", UserMiddleware_1.userMiddleware, CryptoMiddleware_1.cryptoMiddleware, UserController_1.userController.getUser);
+router.get("/logout", UserMiddleware_1.userMiddleware, CryptoMiddleware_1.cryptoMiddleware, UserController_1.userController.logout);
+router.get("/activate/:link", UserController_1.userController.activate);
+//# sourceMappingURL=index.js.map
