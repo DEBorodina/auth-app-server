@@ -5,38 +5,10 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import { router } from "./router";
 import { errorMiddleware } from "./middlewares/ErrorMiddleware";
-import { createServer } from "node:http";
-import staticHandler from "serve-handler";
-import ws, { WebSocketServer } from "ws";
+import { startWebSocketService } from "./websockets";
 
-const messages: string[] = [];
-
+startWebSocketService();
 const app = express();
-
-const server = createServer((req, res) => {
-  return staticHandler(req, res, { public: "public" });
-});
-
-const wss = new WebSocketServer({ server });
-wss.on("connection", (client) => {
-  console.log("Client connected !");
-  client.on("message", (msg: string) => {
-    messages.push(msg);
-    console.log(`Message:${msg}`);
-    broadcast(msg);
-  });
-});
-
-function broadcast(msg: string) {
-  for (const client of wss.clients) {
-    if (client.readyState === ws.OPEN) {
-      client.send(JSON.stringify(messages));
-    }
-  }
-}
-server.listen(5001, () => {
-  console.log(`server listening...`);
-});
 
 app.use(express.json());
 app.use(cookieParser());
