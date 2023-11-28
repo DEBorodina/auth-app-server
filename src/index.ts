@@ -5,9 +5,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import { router } from "./router";
 import { errorMiddleware } from "./middlewares/ErrorMiddleware";
-import { startWebSocketService } from "./websockets";
 
-startWebSocketService();
 const app = express();
 
 app.use(express.json());

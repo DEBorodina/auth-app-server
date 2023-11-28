@@ -4,6 +4,7 @@ import { body } from "express-validator";
 import { userMiddleware } from "../middlewares/UserMiddleware";
 import { cryptoController } from "../controllers/CryptoController";
 import { cryptoMiddleware } from "../middlewares/CryptoMiddleware";
+import { fileController } from "../controllers/FileController";
 
 const router = Router();
 
@@ -23,6 +24,7 @@ router.post(
   cryptoMiddleware,
   userController.login
 );
+router.get("/files", userMiddleware, cryptoMiddleware, fileController.getFiles);
 router.get("/publicKey", cryptoController.generateKeyPair);
 router.post(
   "/secretKey",

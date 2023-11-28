@@ -4,7 +4,7 @@ import { validationResult } from "express-validator";
 import { ApiError } from "../exceptions/ApiError";
 import { tokenService } from "../services/TokenService";
 import { cryptoService } from "../services/CryptoService";
-import { messageService } from "../services/MessageService";
+import { fileService } from "../services/FileService";
 
 class UserController {
   async registration(req: Request, res: Response, next: NextFunction) {
@@ -120,11 +120,7 @@ class UserController {
         user[field] = cryptoService.encryptData(user[field], key);
       }
 
-      const messagesData = await messageService.getMessages();
-      const messagesToEncrypt = JSON.stringify(messagesData);
-      const messages = cryptoService.encryptData(messagesToEncrypt, key);
-
-      return res.json({ user, messages });
+      return res.json(user);
     } catch (e) {
       next(e);
     }
@@ -139,15 +135,11 @@ class UserController {
         string
       >;
 
-      const messagesData = await messageService.getMessages();
-      const messagesToEncrypt = JSON.stringify(messagesData);
-      const messages = cryptoService.encryptData(messagesToEncrypt, key);
-
       for (const field in user) {
         user[field] = cryptoService.encryptData(user[field], key);
       }
 
-      return res.json({ user, messages });
+      return res.json(user);
     } catch (e) {
       next(e);
     }
