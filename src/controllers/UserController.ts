@@ -5,11 +5,13 @@ import { ApiError } from "../exceptions/ApiError";
 import { tokenService } from "../services/TokenService";
 import { cryptoService } from "../services/CryptoService";
 import { fileService } from "../services/FileService";
+import { UserDto } from "../dtos/UserDto";
 
 class UserController {
   async registration(req: Request, res: Response, next: NextFunction) {
     try {
       const errors = validationResult(req);
+
       if (!errors.isEmpty()) {
         return next(ApiError.BadRequest("Validation error", errors.array()));
       }
@@ -22,13 +24,14 @@ class UserController {
       name = cryptoService.decryptData(name, key);
       lastName = cryptoService.decryptData(lastName, key);
 
-      const token = await userService.registration(
+      const userId = await userService.registration(
         email,
         password,
         name,
         lastName
       );
-      return res.json(cryptoService.encryptData(token, key));
+
+      return res.json(cryptoService.encryptData(userId, key));
     } catch (e) {
       next(e);
     }
@@ -42,9 +45,9 @@ class UserController {
       email = cryptoService.decryptData(email, key);
       password = cryptoService.decryptData(password, key);
 
-      const token = await userService.login(email, password);
+      const userId = await userService.login(email, password);
 
-      return res.json(cryptoService.encryptData(token, key));
+      return res.json(cryptoService.encryptData(userId, key));
     } catch (e) {
       next(e);
     }
@@ -90,37 +93,24 @@ class UserController {
     }
   }
 
-  async activate(req: Request, res: Response, next: NextFunction) {
-    try {
-      const activationLink = req.params.link;
-      await userService.activate(activationLink);
-
-      return res.redirect(process.env.CLIENT_URL);
-    } catch (e) {
-      next(e);
-    }
-  }
-
   async verifyCode(req: Request, res: Response, next: NextFunction) {
     try {
-      let { code } = req.body;
+      let { code, userId } = req.body;
       const key = req.key;
+
       code = cryptoService.decryptData(code, key);
+      userId = cryptoService.decryptData(userId, key);
 
-      const authorizationHeader = req.headers.authorization;
-      const accessToken = authorizationHeader.split(" ")[1];
-      const { email } = tokenService.validateToken(accessToken);
+      let { user, token } = await userService.verifyUserWithCode(code, userId);
 
-      const user = (await userService.verifyUserWithCode(
-        code,
-        email
-      )) as never as Record<string, string>;
-
-      for (const field in user) {
-        user[field] = cryptoService.encryptData(user[field], key);
+      let field: keyof UserDto;
+      for (field in user) {
+        user[field] = cryptoService.encryptData(user[field], key) as any;
       }
 
-      return res.json(user);
+      token = cryptoService.encryptData(token, key);
+
+      return res.json({ user, token });
     } catch (e) {
       next(e);
     }

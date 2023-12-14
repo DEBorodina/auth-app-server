@@ -37,11 +37,13 @@ class CryptoService {
   decryptData(data: string, secretKey: string) {
     const bytes = AES.decrypt(data, secretKey);
     const dataJson = bytes.toString(CryptoJS.enc.Utf8);
+
     return JSON.parse(dataJson);
   }
 
   encryptData(data: any, secretKey: string) {
     data = JSON.stringify(data);
+
     return AES.encrypt(data, secretKey).toString();
   }
 }

@@ -34,7 +34,8 @@ router.post(
 );
 router.post(
   "/verify-code",
-  body("code").isLength({ min: 4, max: 4 }),
+  body("code").isLength({ min: 10, max: 10 }),
+  body("userId"),
   cryptoMiddleware,
   userController.verifyCode
 );
@@ -45,8 +46,15 @@ router.post(
   userMiddleware,
   userController.update
 );
+router.post(
+  "/files",
+  body("file"),
+  cryptoMiddleware,
+  userMiddleware,
+  fileController.addFile
+);
+router.get("/files", userMiddleware, cryptoMiddleware, fileController.getFiles);
 router.get("/user", userMiddleware, cryptoMiddleware, userController.getUser);
 router.get("/logout", userMiddleware, cryptoMiddleware, userController.logout);
-router.get("/activate/:link", userController.activate);
 
 export { router };

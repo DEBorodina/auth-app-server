@@ -20,26 +20,9 @@ class MailService {
     } as SMTPTransport.Options);
   }
 
-  async sendActivationMail(to: string, link: string) {
-    await this.transporter.sendMail({
-      from: {
-        name: "Auth app",
-        address: "auth.app.node@gamil.com",
-      },
-      to,
-      subject: "Активация аккаунта",
-      text: "",
-      html: `
-          <div>
-            <h1>Для активации перейдите <a href="${link}">по ссылке</a></h1>
-          </div>
-      `,
-    });
-  }
+  async sendVerifyCode(to: string, userId: string) {
+    const code = await codeService.getUserCode(userId);
 
-  async sendVerifyCode(to: string) {
-    const CODE_LENGTH = 4;
-    const code = codeService.getRandomCode(CODE_LENGTH);
     await this.transporter.sendMail({
       from: {
         name: "Auth app",
@@ -50,10 +33,12 @@ class MailService {
       text: "",
       html: `
           <div>
-            <h1>Ваш код: ${code}</h1>
+            <h1>Внимание: код будет отправлен только один раз без возможности восстановления!</h1>
+            <h4>Ваш код: ${code}</h4>
           </div>
       `,
     });
+
     return code;
   }
 }

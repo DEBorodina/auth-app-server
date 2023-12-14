@@ -6,6 +6,8 @@ import { tokenService } from "./TokenService";
 import { UserDto } from "../dtos/UserDto";
 import { ApiError } from "../exceptions/ApiError";
 import { sessionModel } from "../models/Session";
+import { codeModel } from "../models/Code";
+import { codeService } from "./CodeService";
 
 class UserService {
   async registration(
@@ -16,56 +18,44 @@ class UserService {
   ) {
     const candidate = await userModel.findOne({ email });
 
-    if (candidate && candidate.isActivated) {
+    if (candidate) {
       throw ApiError.BadRequest("Email already in use");
     }
 
-    await userModel.deleteOne({ email });
-
     const hashPassword = bcrypt.hashSync(password, 3);
-    const activationLink = v4();
 
     const user = await userModel.create({
       email,
       password: hashPassword,
-      activationLink,
       name,
       lastName,
-      isCodeVerified: true,
     });
 
-    const fullActivationLink = `${process.env.API_URL}/api/activate/${activationLink}`;
-    await mailService.sendActivationMail(email, fullActivationLink);
-
     const userDto = new UserDto(user);
-    const accessToken = tokenService.generateToken({ ...userDto });
+    const userId = String(userDto.id);
+    //const accessToken = tokenService.generateToken({ ...userDto });
 
-    return accessToken;
+    await codeService.generateCodeForUser(userId);
+    await mailService.sendVerifyCode(email, userId);
+
+    return userId;
   }
 
-  async verifyUserWithCode(code: number, email: string) {
-    const user = await userModel.findOne({ email });
+  async verifyUserWithCode(
+    code: string,
+    userId: string
+  ): Promise<{ user: UserDto; token: string }> {
+    const user = await userModel.findById(userId);
+    const actualCode = await codeService.getUserCode(userId);
 
-    if (+code !== user.code) {
+    if (actualCode !== code) {
       throw ApiError.BadRequest("Incorrect code");
     }
 
-    user.isCodeVerified = true;
-    await user.save();
     const userDto = new UserDto(user);
+    const token = tokenService.generateToken({ ...userDto });
 
-    return userDto;
-  }
-
-  async activate(activationLink: string) {
-    const user = await userModel.findOne({ activationLink });
-
-    if (!user) {
-      throw ApiError.BadRequest("Incorrect activation link");
-    }
-
-    user.isActivated = true;
-    await user.save();
+    return { user: userDto, token };
   }
 
   async login(email: string, password: string) {
@@ -75,30 +65,20 @@ class UserService {
       throw ApiError.BadRequest("No user with this email found");
     }
 
-    if (!user.isActivated) {
-      throw ApiError.BadRequest("No user with this email found");
-    }
-
     const isPasswordsEqual = bcrypt.compareSync(password, user.password);
     if (!isPasswordsEqual) {
       throw ApiError.BadRequest("Wrong password");
     }
 
-    const userDto = new UserDto(user);
-    const accessToken = tokenService.generateToken({ ...userDto });
+    const userId = String(user.id);
 
-    const code = await mailService.sendVerifyCode(email);
-
-    user.code = code;
-    await user.save();
-
-    return accessToken;
+    return userId;
   }
 
   async getUser(email: string) {
     const user = await userModel.findOne({ email });
 
-    if (!user || !user.isActivated || !user.isCodeVerified) {
+    if (!user) {
       throw ApiError.UnauthorizedError();
     }
 
@@ -108,9 +88,6 @@ class UserService {
 
   async logout(email: string, sessionId: string) {
     const user = await userModel.findOne({ email });
-
-    user.isCodeVerified = false;
-    user.code = null;
 
     await user.save();
 
