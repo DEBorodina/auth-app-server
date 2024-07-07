@@ -8,10 +8,26 @@ services:
       dockerfile: docker/Dockerfile
       pull: true
     pull_policy: never
-    ports:
-      - "5000:5000"
-      - "5001:5001"
+    networks:
+      - app
     env_file:
       - .env
     command: >
       bash -c "npm i && npm start"
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf:/etc/nginx/conf.d
+      - /home/bober-1/certs/auth-api/conf/live/auth-api.ddns.net/:/etc/letsencrypt/auth-api:ro
+      - /home/bober-1/certs/auth-socket/conf/live/auth-socket.ddns.net/:/etc/letsencrypt/auth-socket:ro
+    depends_on:
+      - nodejs-server
+    networks:
+      - app
+
+networks:
+  app:
