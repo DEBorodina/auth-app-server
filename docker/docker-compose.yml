@@ -22,8 +22,8 @@ services:
       - "443:443"
     volumes:
       - ./nginx/conf:/etc/nginx/conf.d
-      - /home/bober-1/certs/auth-api/conf/live/auth-api.ddns.net/:/etc/letsencrypt/auth-api:ro
-      - /home/bober-1/certs/auth-socket/conf/live/auth-socket.ddns.net/:/etc/letsencrypt/auth-socket:ro
+      - /home/bober-1/certs/auth-api:/etc/letsencrypt/auth-api:ro
+      - /home/bober-1/certs/auth-socket:/etc/letsencrypt/auth-socket:ro
     depends_on:
       - nodejs-server
     networks:
