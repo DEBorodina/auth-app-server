@@ -18,6 +18,7 @@ jobs:
 
       - name: Build image and start Docker Compose
         run: |
+          sudo cp /etc/.env ${PWD}/docker
           cd docker && docker compose build
           docker compose up -d
 
