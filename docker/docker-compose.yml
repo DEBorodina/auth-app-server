@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  nodejs-server:
+    container_name: backend-app
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+      pull: true
+    pull_policy: never
+    networks:
+      - app
+    env_file:
+      - .env
+    command: >
+      bash -c "npm i && npm start"
+
+  nginx:
+    container_name: nginx
+    image: nginx:alpine
+    ports:
+      - "5000:80"
+    volumes:
+      - ./nginx/conf:/etc/nginx/conf.d
+      - ./nginx/logs:/var/log/nginx
+    depends_on:
+      - nodejs-server
+    networks:
+      - app
+
+networks:
+  app:
